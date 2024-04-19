@@ -30,7 +30,7 @@ ALBUMS = [
     'Midnights (The Late Night Edition)', '2004–2005 Demo CD',
     'The More Lover Chapter', 'iTunes Essentials',
     'The More Red (Taylor’s Version) Chapter',
-    'The More Fearless (Taylor’s Version) Chapter', ''
+    'The More Fearless (Taylor’s Version) Chapter', 'The Tortured Poets Department', ''
 ]
 
 # Songs that don't have an album or for which Taylor Swift is not the primary artist
@@ -42,14 +42,36 @@ OTHER_SONGS = [
 
 # Songs for which there is trouble retrieving them by name - some of these are probably no longer an issue anyways
 EXTRA_SONG_API_PATHS = {
-    '/songs/187017': 'Beautiful Eyes - EP',
-    '/songs/186861': 'The Taylor Swift Holiday Collection - EP',
-    '/songs/6959851': 'How Long Do You Think It’s Gonna Last?',
-    '/songs/4968964': 'Cats: Highlights From the Motion Picture Soundtrack',
-    '/songs/5114093': 'Cats: Highlights From the Motion Picture Soundtrack',
-    '/songs/7823793': 'Carolina (From The Motion Picture “Where The Crawdads Sing”) - Single',
-    '/songs/5077615': 'Christmas Tree Farm',
-    '/songs/8924411': 'The More Red (Taylor’s Version) Chapter',
+    # '/songs/187017': 'Beautiful Eyes - EP',
+    # '/songs/186861': 'The Taylor Swift Holiday Collection - EP',
+    # '/songs/6959851': 'How Long Do You Think It’s Gonna Last?',
+    # '/songs/4968964': 'Cats: Highlights From the Motion Picture Soundtrack',
+    # '/songs/5114093': 'Cats: Highlights From the Motion Picture Soundtrack',
+    # '/songs/7823793': 'Carolina (From The Motion Picture “Where The Crawdads Sing”) - Single',
+    # '/songs/5077615': 'Christmas Tree Farm',
+    # '/songs/8924411': 'The More Red (Taylor’s Version) Chapter',
+    # Manually adding in TTPD songs so that it generates faster on release night
+    '/songs/10024009': 'The Tortured Poets Department',
+    '/songs/10024578': 'The Tortured Poets Department',
+    '/songs/10024528': 'The Tortured Poets Department',
+    '/songs/10024535': 'The Tortured Poets Department',
+    '/songs/10024536': 'The Tortured Poets Department',
+    '/songs/10024520': 'The Tortured Poets Department',
+    '/songs/10024544': 'The Tortured Poets Department',
+    '/songs/10291434': 'The Tortured Poets Department',
+    '/songs/10024517': 'The Tortured Poets Department',
+    '/songs/10024563': 'The Tortured Poets Department',
+    '/songs/10024518': 'The Tortured Poets Department',
+    '/songs/10024526': 'The Tortured Poets Department',
+    '/songs/10024512': 'The Tortured Poets Department',
+    '/songs/10024519': 'The Tortured Poets Department',
+    '/songs/10024521': 'The Tortured Poets Department',
+    '/songs/10024516': 'The Tortured Poets Department',
+    # TTPD Bonus Tracks
+    # '/songs/10064067': 'The Tortured Poets Department',
+    # '/songs/10021428': 'The Tortured Poets Department',
+    # '/songs/10124160': 'The Tortured Poets Department',
+    # '/songs/10090426': 'The Tortured Poets Department',
 }
 
 # Songs that are somehow duplicates / etc.
@@ -92,19 +114,19 @@ def main():
     # Only look for songs that aren't already existing
     parser.add_argument('--append', action='store_true')
     # Append songs specifically in EXTRA_SONG_API_PATHS
-    parser.add_argument('--appendpaths', action='store_true')
-    args = parser.parse_args()
-    existing_df, existing_songs = None, []
-    if args.append or args.appendpaths:
-        existing_df = pd.read_csv(CSV_PATH)
-        existing_songs = list(existing_df['Title'])
-    genius = lyricsgenius.Genius(access_token)
-    songs = get_songs(existing_songs) if not args.appendpaths else []
-    songs_by_album, has_failed, last_song = {}, True, ''
-    while has_failed:
-        songs_by_album, has_failed, last_song = sort_songs_by_album(
-            genius, songs, songs_by_album, last_song, existing_songs)
-    albums_to_songs_csv(songs_by_album, existing_df)
+    # parser.add_argument('--appendpaths', action='store_true')
+    # args = parser.parse_args()
+    # existing_df, existing_songs = None, []
+    # if args.append or args.appendpaths:
+    #     existing_df = pd.read_csv(CSV_PATH)
+    #     existing_songs = list(existing_df['Title'])
+    # genius = lyricsgenius.Genius(access_token)
+    # songs = get_songs(existing_songs) if not args.appendpaths else []
+    # songs_by_album, has_failed, last_song = {}, True, ''
+    # while has_failed:
+    #     songs_by_album, has_failed, last_song = sort_songs_by_album(
+    #         genius, songs, songs_by_album, last_song, existing_songs)
+    # albums_to_songs_csv(songs_by_album, existing_df)
     songs_to_lyrics()
     lyrics_to_json()
 
@@ -262,7 +284,8 @@ def songs_to_lyrics():
     song_titles = []
     for song in song_data.to_records(index=False):
         title, album, lyrics = song
-        if title not in song_titles:
+        print(title)
+        if title not in song_titles and len(lyrics) > 1:
             song_titles.append(title)
             lyric_dict = get_lyric_list(lyrics)
             for lyric in lyric_dict:
@@ -336,7 +359,8 @@ def lyrics_to_json():
 
 def clean_lyrics(lyrics: str) -> str:
     # Remove first line (title + verse line)
-    lyrics = lyrics.split(sep='\n', maxsplit=1)[1]
+    split_lyrics = lyrics.split(sep='\n', maxsplit=1)
+    lyrics = split_lyrics[1] if len(split_lyrics) > 1 else ''
     # Replace special quotes with normal quotes
     lyrics = re.sub(r'\u2018|\u2019', "'", lyrics)
     lyrics = re.sub(r'\u201C|\u201D', '"', lyrics)
