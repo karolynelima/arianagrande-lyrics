@@ -119,7 +119,6 @@ LYRIC_PATH = 'lyrics.csv'
 LYRIC_JSON_PATH = 'lyrics.json'
 SONG_LIST_PATH = 'song_titles.txt'
 
-access_token = # put your genius.com API access token here as a string
 
 def main():
     parser = argparse.ArgumentParser()
