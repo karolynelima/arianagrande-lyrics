@@ -239,7 +239,7 @@ def albums_to_songs_csv(songs_by_album, existing_df=None):
             for song in songs_by_album[album]:
                 if song.title not in IGNORE_SONGS and song.title not in songs_titles:
                     record = {
-                        'Title': song.title.strip('\u200b'),
+                        'Title': song.title.replace('\u200b', ''),
                         'Album':
                         album if 'Lover (Target' not in album else 'Lover',
                         'Lyrics': song.lyrics,
@@ -250,7 +250,7 @@ def albums_to_songs_csv(songs_by_album, existing_df=None):
             for song in songs_by_album[album]:
                 if song in OTHER_SONGS and song.title not in songs_titles:
                     record = {
-                        'Title': song.title,
+                        'Title': song.title.replace('\u200b', ''),
                         'Album': album,
                         'Lyrics': song.lyrics,
                     }
@@ -376,8 +376,12 @@ def clean_lyrics(lyrics: str) -> str:
     lyrics = re.sub(r'\u201C|\u201D', '"', lyrics)
     # Replace special unicode spaces with standard space
     lyrics = re.sub(
-        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]',
+        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u202f\u205f​\u3000]',
         " ", lyrics)
+    # Replace zero-width space with empty string
+    lyrics = lyrics.replace('\u200b', '')
+    # Replace Cyrillic 'e' letters with English 'e'.
+    lyrics = re.sub(r'\u0435', "e", lyrics)
     # Replace dashes with space and single hyphen
     lyrics = re.sub(r'\u2013|\u2014', " - ", lyrics)
     # Replace hyperlink text
