@@ -359,8 +359,11 @@ def clean_title(title: str) -> str:
     title = re.sub(r'\u201C|\u201D', '"', title)
     # Replace special unicode spaces with standard space
     title = re.sub(
-        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]',
+        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u202f\u205f​\u3000]',
         " ", title)
+    title = title.replace('\u200b', '', title)
+    title = re.sub(r'\u0435', "e", title)
+    title = re.sub(r'\u2013|\u2014', " - ", title)
     title = title.strip(' ')
     return title
 
@@ -373,8 +376,12 @@ def clean_lyrics(lyrics: str) -> str:
     lyrics = re.sub(r'\u201C|\u201D', '"', lyrics)
     # Replace special unicode spaces with standard space
     lyrics = re.sub(
-        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]',
+        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u202f\u205f​\u3000]',
         " ", lyrics)
+    # Replace zero-width space with empty string
+    lyrics = lyrics.replace('\u200b', '')
+    # Replace Cyrillic 'e' letters with English 'e'.
+    lyrics = re.sub(r'\u0435', "e", lyrics)
     # Replace dashes with space and single hyphen
     lyrics = re.sub(r'\u2013|\u2014', " - ", lyrics)
     # Replace hyperlink text
