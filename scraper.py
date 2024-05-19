@@ -9,80 +9,37 @@ import requests
 from lyricsgenius.types import Song
 from local import *
 
-ALBUMS = [
-    "1989 (Taylor’s Version)", "1989 (Taylor’s Version) [Deluxe]",
-    '1989 (Taylor’s Version) [Tangerine Edition]', 'Beautiful Eyes - EP', 
-    'Christmas Tree Farm', 'Cats: Highlights From the Motion Picture Soundtrack',
-    'Carolina (From The Motion Picture “Where The Crawdads Sing”) - Single',
-    'Fearless (Taylor’s Version)',
-    'Fifty Shades Darker (Original Motion Picture Soundtrack)',
-    'Hannah Montana: The Movie', 'Lover',
-    'How Long Do You Think It’s Gonna Last?', 'Miss Americana',
-    'Red (Taylor’s Version)', 'Speak Now (Taylor’s Version)', 'Taylor Swift',
-    'Taylor Swift (Deluxe)', "Taylor Swift (Best Buy Exclusive)",
-    'Taylor Swift (Big Machine Radio Release Special)',
-    'The Taylor Swift Holiday Collection - EP', 'Unreleased Songs', 'evermore',
-    'evermore (deluxe version)', "evermore (Japanese Edition)", 'folklore',
-    'folklore (deluxe version)', 'reputation',
-    'Two Lanes of Freedom (Accelerated Deluxe)', 'Love Drunk',
-    'Women in Music Pt. III (Expanded Edition)', 'Midnights',
-    'Midnights (3am Edition)', 'Midnights (Target Exclusive)',
-    'Midnights (The Late Night Edition)', '2004–2005 Demo CD',
-    'The Hunger Games', 'The More Lover Chapter', 'iTunes Essentials',
-    'The More Red (Taylor’s Version) Chapter',
-    'The More Fearless (Taylor’s Version) Chapter', 'The Tortured Poets Department', ''
-]
+ALBUMS = {
+    '/albums/12682': 'Taylor Swift',
+    '/albums/152556': 'Beautiful Eyes',
+    '/albums/734107': "Fearless (Taylor's Version)",
+    '/albums/758025': "Speak Now (Taylor's Version)",
+    '/albums/758022': "Red (Taylor's Version)",
+    '/albums/1082316': "1989 (Taylor's Version)",
+    '/albums/350247': 'reputation',
+    '/albums/4508914': 'Lover',
+    '/albums/5793971': 'folklore',
+    '/albums/710147': 'evermore',
+    '/albums/949856': 'Midnights',
+    '/albums/1040217': 'Midnights',
+    '/albums/1171508': 'The Tortured Poets Department',
+    '/albums/39094': 'The Taylor Swift Holiday Collection',
+    '/albums/8924411': 'The Hunger Games',
+}
 
 # Songs that don't have an album or for which Taylor Swift is not the primary artist
-OTHER_SONGS = [
-    'Only The Young', 'Christmas Tree Farm', 'Renegade', 'Carolina',
-    "I Don’t Wanna Live Forever", 'Beautiful Eyes', "Highway Don’t Care",
-    'Two Is Better Than One', 'Gasoline (Remix)'
-]
-
-# Songs for which there is trouble retrieving them by name - some of these are probably no longer an issue anyways
 EXTRA_SONG_API_PATHS = {
-    '/songs/187017': 'Beautiful Eyes - EP',
-    '/songs/186861': 'The Taylor Swift Holiday Collection - EP',
     '/songs/6959851': 'How Long Do You Think It’s Gonna Last?',
-    '/songs/4968964': 'Cats: Highlights From the Motion Picture Soundtrack',
-    '/songs/5114093': 'Cats: Highlights From the Motion Picture Soundtrack',
-    '/songs/7823793': 'Carolina (From The Motion Picture “Where The Crawdads Sing”) - Single',
+    '/songs/4968964': 'Cats',
+    '/songs/5114093': 'Cats',
+    '/songs/7823793': 'Where The Crawdads Sing',
     '/songs/5077615': 'Christmas Tree Farm',
-    '/songs/8924411': 'The More Red (Taylor’s Version) Chapter',
-    # Manually adding in TTPD songs so that it generates faster on release night
-    '/songs/10024009': 'The Tortured Poets Department',
-    '/songs/10024578': 'The Tortured Poets Department',
-    '/songs/10024528': 'The Tortured Poets Department',
-    '/songs/10024535': 'The Tortured Poets Department',
-    '/songs/10024536': 'The Tortured Poets Department',
-    '/songs/10024520': 'The Tortured Poets Department',
-    '/songs/10024544': 'The Tortured Poets Department',
-    '/songs/10291434': 'The Tortured Poets Department',
-    '/songs/10024517': 'The Tortured Poets Department',
-    '/songs/10024563': 'The Tortured Poets Department',
-    '/songs/10024518': 'The Tortured Poets Department',
-    '/songs/10024526': 'The Tortured Poets Department',
-    '/songs/10024512': 'The Tortured Poets Department',
-    '/songs/10024519': 'The Tortured Poets Department',
-    '/songs/10024521': 'The Tortured Poets Department',
-    '/songs/10024516': 'The Tortured Poets Department',
-    # TTPD Bonus Tracks
-    '/songs/10064067': 'The Tortured Poets Department',
-    '/songs/10021428': 'The Tortured Poets Department',
-    '/songs/10124160': 'The Tortured Poets Department',
-    '/songs/10090426': 'The Tortured Poets Department',
-    '/songs/10296670': 'The Tortured Poets Department',
-    '/songs/10296695': 'The Tortured Poets Department',
-    '/songs/10296686': 'The Tortured Poets Department',
-    '/songs/10296673': 'The Tortured Poets Department',
-    '/songs/10296676': 'The Tortured Poets Department',
-    '/songs/10296677': 'The Tortured Poets Department',
-    '/songs/10296681': 'The Tortured Poets Department',
-    '/songs/10296661': 'The Tortured Poets Department',
-    '/songs/10296680': 'The Tortured Poets Department',
-    '/songs/10296682': 'The Tortured Poets Department',
-    '/songs/10296690': 'The Tortured Poets Department',
+    '/songs/2927948': "Fifty Shades Darker",
+    '/songs/5191847': "Miss Americana",
+    '/songs/6959851': "How Long Do You Think It's Gonna Last",
+    '/songs/642957': "Love Drunk",
+    '/songs/6453633': "Women in Music Part III",
+    '/songs/154241': "Two Lanes of Freedom",
 }
 
 # Songs that are somehow duplicates / etc.
@@ -132,37 +89,80 @@ def main():
         existing_df = pd.read_csv(CSV_PATH)
         existing_songs = list(existing_df['Title'])
     genius = lyricsgenius.Genius(access_token)
-    songs = get_songs(existing_songs) if not args.appendpaths else []
-    songs_by_album, has_failed, last_song = {}, True, ''
-    while has_failed:
-        songs_by_album, has_failed, last_song = sort_songs_by_album(
-            genius, songs, songs_by_album, last_song, existing_songs)
+    # songs = get_songs(existing_songs) if not args.appendpaths else []
+    num_retries = 0
+    songs_by_album, has_failed, last_album, songs_so_far = {}, True, None, existing_songs
+    while has_failed and num_retries < 4:
+        songs_by_album, has_failed, last_album = get_songs_by_album(
+            genius, songs_by_album, last_album, songs_so_far)
+        num_retries += 1
     albums_to_songs_csv(songs_by_album, existing_df)
     songs_to_lyrics()
     lyrics_to_json()
 
 
-def get_songs(existing_songs):
-    print('Getting songs...')
-    songs = []
-    next_page = 1
-    while next_page != None:
-        request_url = ARTIST_URL + "/songs?page=" + str(next_page)
+def get_songs_by_album(genius, songs_by_album, last_album, songs_so_far):
+    print('Getting songs from albums...')
+    def get_song_data(api_path):
+        request_url = API_PATH + api_path
         r = requests.get(request_url,
                          headers={'Authorization': "Bearer " + access_token})
-        song_data = json.loads(r.text)
-        songs.extend(song_data['response']['songs'])
-        next_page = song_data['response']['next_page']
-    returned_songs = []
-    for song in songs:
-        if song['title'] not in existing_songs and song[
-                'title'] + " (Taylor’s Version)" not in existing_songs and song[
-                    'release_date_components'] != None and song[
-                        'lyrics_state'] == 'complete' and (
-                            song['primary_artist']['id'] == ARTIST_ID
-                            or song['title'] in OTHER_SONGS):
-            returned_songs.append(song)
-    return returned_songs
+        return json.loads(r.text)['response']['song']
+
+    def clean_lyrics_and_append(song_data, album_name, lyrics, songs_by_album):
+        cleaned_lyrics = clean_lyrics(lyrics)
+        s = Song(genius, song_data, cleaned_lyrics)
+        if album_name not in songs_by_album:
+            songs_by_album[album_name] = []
+        songs_by_album[album_name].append(s)
+
+    album_index = 0
+    
+    for album_api_path in ALBUMS:
+        if last_album is None or album_index >= list(ALBUMS.keys()).index(last_album):
+            album_name = ALBUMS[album_api_path]
+            print('Getting songs for album', album_name)
+            next_page = 1
+            tracks = []
+            while next_page != None:
+                try:
+                    request_url = API_PATH + album_api_path + "/tracks?page=" + str(next_page)
+                    r = requests.get(request_url,
+                                    headers={'Authorization': "Bearer " + access_token})
+                    track_data = json.loads(r.text)
+                    tracks.extend(track_data['response']['tracks'])
+                    next_page = track_data['response']['next_page']
+                except Exception:
+                    print(track_data.keys())
+                    return songs_by_album, True, album_api_path
+            for track in tracks:
+                song = track['song']
+                cleaned_song_title = clean_title(song['title'])
+                try:
+                    if cleaned_song_title not in songs_so_far and song['release_date_components'] != None and song['lyrics_state'] == 'complete':
+                        lyrics = genius.lyrics(song_id=song['id'])
+                        # Ensure that there are lyrics
+                        if lyrics and has_song_identifier(lyrics):
+                            songs_so_far.append(cleaned_song_title)
+                            clean_lyrics_and_append(song, album_name, lyrics,
+                                                    songs_by_album)
+                except requests.exceptions.Timeout or socket.timeout:
+                    print('Failed receiving song', cleaned_song_title,
+                        '-- saving songs so far')
+                    return songs_by_album, True, album_api_path
+        album_index += 1
+        
+    for api_path in EXTRA_SONG_API_PATHS:
+        song_data = get_song_data(api_path)
+        if song_data['title'] not in existing_songs and song_data[
+                'title'] not in songs_so_far:
+            lyrics = genius.lyrics(song_id=song_data['id'])
+            album_name = EXTRA_SONG_API_PATHS[api_path]
+            clean_lyrics_and_append(song_data, album_name, lyrics,
+                                    songs_by_album)
+
+    return songs_by_album, False, None
+
 
 
 def sort_songs_by_album(genius,
@@ -235,27 +235,15 @@ def albums_to_songs_csv(songs_by_album, existing_df=None):
     songs_records = []
     songs_titles = []
     for album in songs_by_album:
-        if album in ALBUMS:
-            for song in songs_by_album[album]:
-                if song.title not in IGNORE_SONGS and song.title not in songs_titles:
-                    record = {
-                        'Title': song.title.strip('\u200b'),
-                        'Album':
-                        album if 'Lover (Target' not in album else 'Lover',
-                        'Lyrics': song.lyrics,
-                    }
-                    songs_records.append(record)
-                    songs_titles.append(song.title)
-        else:
-            for song in songs_by_album[album]:
-                if song in OTHER_SONGS and song.title not in songs_titles:
-                    record = {
-                        'Title': song.title,
-                        'Album': album,
-                        'Lyrics': song.lyrics,
-                    }
-                    songs_records.append(record)
-                    songs_titles.append(song.title)
+        for song in songs_by_album[album]:
+            if song.title not in IGNORE_SONGS and song.title not in songs_titles:
+                record = {
+                    'Title': clean_title(song.title),
+                    'Album': album,
+                    'Lyrics': song.lyrics,
+                }
+                songs_records.append(record)
+                songs_titles.append(song.title)
 
     song_df = pd.DataFrame.from_records(songs_records)
     if existing_df is not None:
@@ -366,6 +354,15 @@ def lyrics_to_json():
         f.write(lyric_json)
         f.close()
 
+def clean_title(title: str) -> str:
+    title = re.sub(r'\u2018|\u2019', "'", title)
+    title = re.sub(r'\u201C|\u201D', '"', title)
+    # Replace special unicode spaces with standard space
+    title = re.sub(
+        r'[\u00A0\u1680​\u180e\u2000-\u2009\u200a​\u200b​\u202f\u205f​\u3000]',
+        " ", title)
+    title = title.strip(' ')
+    return title
 
 def clean_lyrics(lyrics: str) -> str:
     # Remove first line (title + verse line)
